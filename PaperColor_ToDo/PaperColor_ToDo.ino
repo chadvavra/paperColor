@@ -34,6 +34,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <M5PM1.h>
+#include <driver/rtc_io.h>   // rtc_gpio_pullup_en, esp_sleep_pd_config
 
 // ── BLE UUIDs (Nordic UART Service) ──────────────────────
 #define BLE_DEVICE_NAME   "PaperColor-ToDo"
@@ -456,6 +457,25 @@ void goToSleep() {
     NimBLEDevice::deinit(true);
 
     // Wake on any of the three buttons (active LOW)
+    // Must explicitly hold RTC peripherals on so internal pullups are maintained
+    // during deep sleep — without this the pins float and never trigger LOW
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+
+    rtc_gpio_init((gpio_num_t)BTN_A_PIN);
+    rtc_gpio_set_direction((gpio_num_t)BTN_A_PIN, RTC_GPIO_MODE_INPUT_ONLY);
+    rtc_gpio_pulldown_dis((gpio_num_t)BTN_A_PIN);
+    rtc_gpio_pullup_en((gpio_num_t)BTN_A_PIN);
+
+    rtc_gpio_init((gpio_num_t)BTN_B_PIN);
+    rtc_gpio_set_direction((gpio_num_t)BTN_B_PIN, RTC_GPIO_MODE_INPUT_ONLY);
+    rtc_gpio_pulldown_dis((gpio_num_t)BTN_B_PIN);
+    rtc_gpio_pullup_en((gpio_num_t)BTN_B_PIN);
+
+    rtc_gpio_init((gpio_num_t)BTN_C_PIN);
+    rtc_gpio_set_direction((gpio_num_t)BTN_C_PIN, RTC_GPIO_MODE_INPUT_ONLY);
+    rtc_gpio_pulldown_dis((gpio_num_t)BTN_C_PIN);
+    rtc_gpio_pullup_en((gpio_num_t)BTN_C_PIN);
+
     esp_sleep_enable_ext1_wakeup(
         (1ULL << BTN_A_PIN) | (1ULL << BTN_B_PIN) | (1ULL << BTN_C_PIN),
         ESP_EXT1_WAKEUP_ANY_LOW
